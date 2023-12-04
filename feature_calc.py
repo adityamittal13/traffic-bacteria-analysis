@@ -100,6 +100,11 @@ def feature_calculation(img_name):
 
     # Contrast
     contrast = img_grey.std()
+    # Entropy with Gaussian Blur
+    ent = entropy_g(img_grey)
+
+    # Contrast
+    contrast = img_grey.std()
 
     # Fourier transform
     fft_features = np.fft.fft2(img_grey)
