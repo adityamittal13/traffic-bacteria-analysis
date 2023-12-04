@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import os
 
 def count_cells(filename):
     img = cv2.imread(filename)
@@ -18,31 +19,23 @@ def count_cells(filename):
     # Find foreground region
     # dist_transform = cv2.distanceTransform(opening, cv2.DIST_L2, 3) 
 
-    cv2.imshow("input", opening)
-    cv2.waitKey(0)
+    # cv2.imshow("input", opening)
+    # cv2.waitKey(0)
 
     ret2, sure_fg = cv2.threshold(opening, 0.1 * opening.max(), 255, cv2.THRESH_BINARY)
 
     cnts = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2]
-    areas = [cv2.contourArea(cnt) for cnt in cnts if 20 < cv2.contourArea(cnt)]
-
-    quartile_cutoff = np.percentile(areas, 85)
-    low_areas = [area for area in areas if area < quartile_cutoff]
-    high_areas = [area for area in areas if area >= quartile_cutoff]
-
-    count = len(low_areas)
-    for high_area in high_areas:
-        count += round(high_area/quartile_cutoff)
 
     sorted_cnts = sorted(cnts, key=lambda x: cv2.contourArea(x))
-    print(list(map(lambda x: cv2.contourArea(x), sorted_cnts)))
+    filtered_sorted_cnts = list(filter(lambda x: cv2.contourArea(x) > 100, sorted_cnts[:-1]))
+    print(list(map(lambda x: cv2.contourArea(x), filtered_sorted_cnts)), len(filtered_sorted_cnts))
 
-    for idx, cnt in enumerate(sorted_cnts[-5:-1]):
+    for idx, cnt in enumerate(filtered_sorted_cnts):
         x, y = [], []
         x, y, w, h = cv2.boundingRect(cnt)
         ROI = img[y: y+h, x: x+w]
-        cv2.imwrite(f'{filename.replace(".png", "")}_{idx}.png', ROI)
-     
-    return count
+        cv2.imwrite(f'{filename.replace(".jpeg", "").replace("cropped-imgs", "seg-imgs")}_{idx}.jpeg', ROI)
 
-print(count_cells('./experiment-data/Wean Outside Circle.png'))
+for file in os.listdir('./cropped-imgs'):
+    print(f"{file}:")
+    count_cells(f"./cropped-imgs/{file}")
