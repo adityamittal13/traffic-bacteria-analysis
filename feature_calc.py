@@ -22,6 +22,27 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.decomposition import KernelPCA
 from sklearn.model_selection import train_test_split
 
+# The color of the colony
+def color_extract(img_name):
+    img = cv2.imread(img_name)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # convert to grayscale
+    blur = cv2.blur(gray, (3, 3)) # blur the image
+    ret, thresh = cv2.threshold(blur, 50, 255, cv2.THRESH_TRIANGLE)
+    
+    # Finding contours for the thresholded image and use the largest one 
+    # to create a mask
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    max_ind = np.argmax([cv2.contourArea(cnt) for cnt in contours])
+
+    mask = np.zeros(img.shape, np.uint8)
+    cv2.drawContours(mask, [contours[max_ind]], -1, color=(255, 255, 255), thickness=cv2.FILLED)
+
+    # Calculate mean rbg value of pixels inside the mask
+    img_mask = img[np.where(mask == 255)]
+
+    img_avg = np.mean(img_mask, axis=0)
+    return img_avg
+
 # The roundness of the shape of the colony
 def hullness(img_name):
     img = cv2.imread(img_name)
@@ -99,8 +120,20 @@ def feature_calculation(img_name):
 
     # Hullness of the colony shape
     hull = hullness(img_name)
+
+    # Color of the colony -- average rgb value of pixels inside the colony
+    clr = color_extract(img_name)
     
     features = [ent, contrast, fft_mean, fft_std, lbp_mean, lbp_std, area, 
-                aspect_ratio] + haralick_features
+                aspect_ratio] + haralick_features + [hull, clr]
+    
+    return features
+
+def main():
+    print(feature_calculation('cropped-imgs/Wean Inside2.jpeg'))
+
+main()
+    
+
 
 
