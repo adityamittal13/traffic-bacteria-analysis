@@ -103,4 +103,4 @@ def feature_calculation(img_name):
     features = [ent, contrast, fft_mean, fft_std, lbp_mean, lbp_std, area, 
                 aspect_ratio] + haralick_features
 
-
+    
