@@ -22,6 +22,30 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.decomposition import KernelPCA
 from sklearn.model_selection import train_test_split
 
+# The color of the colony
+def color_extract(img_name):
+    img = cv2.imread(img_name)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # convert to grayscale
+    blur = cv2.blur(gray, (3, 3)) # blur the image
+    ret, thresh = cv2.threshold(blur, 50, 255, cv2.THRESH_TRIANGLE)
+    
+    # Finding contours for the thresholded image and use the largest one 
+    # to create a mask
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    if (len(contours) == 0): 
+        return 0
+    max_ind = np.argmax([cv2.contourArea(cnt) for cnt in contours])
+
+    mask = np.zeros(img.shape, np.uint8)
+    cv2.drawContours(mask, [contours[max_ind]], -1, color=(255, 255, 255), thickness=cv2.FILLED)
+
+    # Calculate mean rbg value of pixels inside the mask
+    img_mask = img[np.where(mask == 255)]
+
+    img_avg = np.mean(img_mask, axis=0)
+    return img_avg
+
 # The roundness of the shape of the colony
 def hullness(img_name):
     img = cv2.imread(img_name)
@@ -40,14 +64,15 @@ def hullness(img_name):
         hulls.append(cv2.convexHull(contours[i], False))
     
     # find contour areas
-    c_areas = [cv2.contourArea(cnt) for cnt in contours if 20 < cv2.contourArea(cnt)]
-    h_areas = [cv2.contourArea(cnt) for cnt in hulls if 20 < cv2.contourArea(cnt)]
+    c_areas = [cv2.contourArea(cnt) for cnt in contours]
+    h_areas = [cv2.contourArea(cnt) for cnt in hulls]
 
     # print('contour areas: ', sorted(c_areas))
     # print('hull areas: ', sorted(h_areas))
 
     # calculate roundness
-    return max(c_areas)/max(h_areas)*100
+    return max(c_areas)/max(h_areas)*100 if (len(c_areas) != 0 
+                    and len(h_areas) != 0 and max(h_areas) != 0.0) else 0
 
 def entropy_g(image_name: str):
     # Entroy algorithm
@@ -69,7 +94,7 @@ def entropy_g(image_name: str):
 
 def feature_calculation(img_name):
     # Entropy with Gaussian Blur
-    ent = entropy_g(img_name)
+    # ent = entropy_g(img_name)
 
     img = cv2.imread(img_name)
     img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -98,9 +123,15 @@ def feature_calculation(img_name):
     aspect_ratio = img_grey.shape[1] / img_grey.shape[0]
 
     # Hullness of the colony shape
-    hull = hullness(img_name)
-    
-    features = [ent, contrast, fft_mean, fft_std, lbp_mean, lbp_std, area, 
-                aspect_ratio] + haralick_features
 
+    hull = hullness(img_name)
+
+    # Color of the colony -- average rgb value of pixels inside the colony
+    clr = color_extract(img_name)
     
+    features = [contrast, fft_mean, fft_std, lbp_mean, lbp_std, area, 
+                aspect_ratio] + haralick_features + [hull, clr]
+    
+    features = np.array([float(feature) for feature in features])
+    
+    return features

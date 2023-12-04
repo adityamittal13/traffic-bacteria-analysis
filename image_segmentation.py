@@ -2,7 +2,11 @@ import numpy as np
 import cv2
 import os
 
-def count_cells(filename):
+def count_cells(filename, external=False):
+    orig_folder_name = "external-data" if external else "cropped-imgs"
+    folder_name = "ext-seg-imgs" if external else "seg-imgs"
+    path_name = "jpg" if external else "jpeg"
+
     img = cv2.imread(filename)
     image_array = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -34,8 +38,11 @@ def count_cells(filename):
         x, y = [], []
         x, y, w, h = cv2.boundingRect(cnt)
         ROI = img[y: y+h, x: x+w]
-        cv2.imwrite(f'{filename.replace(".jpeg", "").replace("cropped-imgs", "seg-imgs")}_{idx}.jpeg', ROI)
+        cv2.imwrite(f'{filename.replace(path_name, "").replace(orig_folder_name, folder_name)}_{idx}.{path_name}', ROI)
 
 for file in os.listdir('./cropped-imgs'):
     print(f"{file}:")
     count_cells(f"./cropped-imgs/{file}")
+for file in os.listdir('./external-data'):
+    print(f"{file}:")
+    count_cells(f"./external-data/{file}", external=True)
