@@ -23,9 +23,7 @@ from sklearn.decomposition import KernelPCA
 from sklearn.model_selection import train_test_split
 
 # The color of the colony
-def color_extract(img_name):
-    img = cv2.imread(img_name)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # convert to grayscale
+def color_extract(img, gray):
     blur = cv2.blur(gray, (3, 3)) # blur the image
     ret, thresh = cv2.threshold(blur, 50, 255, cv2.THRESH_TRIANGLE)
     
@@ -44,9 +42,7 @@ def color_extract(img_name):
     return img_avg
 
 # The roundness of the shape of the colony
-def hullness(img_name):
-    img = cv2.imread(img_name)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # convert to grayscale
+def hullness(gray):
     blur = cv2.blur(gray, (3, 3)) # blur the image
     ret, thresh = cv2.threshold(blur, 50, 255, cv2.THRESH_TRIANGLE)
     # Finding contours for the thresholded image
@@ -68,12 +64,14 @@ def hullness(img_name):
     # print('hull areas: ', sorted(h_areas))
 
     # calculate roundness
-    return max(c_areas)/max(h_areas)*100
+    c_area_max = max(c_areas)
+    h_area_max = max(h_areas)
+    if (c_area_max == 0 or h_area_max == 0): return 0
+    return c_area_max/h_area_max
 
-def entropy_g(image_name: str):
+def entropy_g(img_grey):
     # Entroy algorithm
-    img = io.imread(image_name)
-    entropy_img = entropy(img, disk(3))
+    entropy_img = entropy(img_grey, disk(3))
 
     # Turn image into binary
     thresh = threshold_otsu(entropy_img)
@@ -89,13 +87,14 @@ def entropy_g(image_name: str):
     return np.sum(binary == 1) / (np.sum(binary == 1) + np.sum(binary == 0))
 
 def feature_calculation(img_name):
-    # Entropy with Gaussian Blur
-    ent = entropy_g(img_name)
-
     img = cv2.imread(img_name)
     img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
-    contrast = img_grey.std() # Contrast
+    # Entropy with Gaussian Blur
+    ent = entropy_g(img_grey)
+
+    # Contrast
+    contrast = img_grey.std()
 
     # Fourier transform
     fft_features = np.fft.fft2(img_grey)
@@ -119,15 +118,16 @@ def feature_calculation(img_name):
     aspect_ratio = img_grey.shape[1] / img_grey.shape[0]
 
     # Hullness of the colony shape
-    hull = hullness(img_name)
+    hull = hullness(img_grey)
 
     # Color of the colony -- average rgb value of pixels inside the colony
-    clr = color_extract(img_name)
+    clr = color_extract(img, img_grey)
     
     features = [ent, contrast, fft_mean, fft_std, lbp_mean, lbp_std, area, 
                 aspect_ratio] + haralick_features + [hull, clr]
+    features_final = [float(val) for val in features]
     
-    return features
+    return features_final
 
 def main():
     print(feature_calculation('cropped-imgs/Wean Inside2.jpeg'))
