@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 groups = ['External', 'Cleaned', 'Doherty', 'Entropy', 'Gates', 'Low', 'Prima', 'Resnik', 'Wean']
 
 num_seg_images = len(os.listdir('./seg-imgs'))
+print(num_seg_images)
 num_extern_images = len(os.listdir('./ext-seg-imgs'))
 num_features = 16
 random_seed = 42
