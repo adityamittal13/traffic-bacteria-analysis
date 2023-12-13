@@ -8,7 +8,13 @@ fig, ax = plt.subplots(figsize = (9, 9))
 
 traffic_data = list(map(int, pd.read_csv("./traffic-data.csv")["Traffic"]))
 cluster_data = [15, 21, 12, 6, 20, 18, 20]
+classes = ['Doherty', 'Entropy', 'Gates', 'Low', 'Prima', 'Resnik', 'Wean']
+
 ax.scatter(traffic_data, cluster_data)
+
+for i, txt in enumerate(classes):
+    ax.annotate(txt, (traffic_data[i], cluster_data[i]))
+
 plt.xlabel("Traffic Amount")
 plt.ylabel("Diversity Score")
 plt.ylim((0, 50))
