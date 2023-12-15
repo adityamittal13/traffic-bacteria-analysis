@@ -24,4 +24,10 @@ b, a = np.polyfit(traffic_data, cluster_data, deg = 1)
 xseq = np.linspace(0, 250, num=50)
 ax.plot(xseq, a + b * xseq, color="k", lw=0.5)
 plt.savefig("traffic_analysis.jpg")
-print(np.corrcoef(traffic_data, cluster_data)[0, 1]**2)
+
+yhat = (lambda x: a + (b * x))(np.array(traffic_data).astype(int))
+ybar = np.sum(cluster_data)/len(cluster_data)
+ssreg = np.sum((yhat-ybar)**2)
+sstot = np.sum((cluster_data - ybar)**2)
+rsquared = ssreg/sstot
+print(rsquared)
