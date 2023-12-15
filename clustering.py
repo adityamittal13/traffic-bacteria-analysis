@@ -5,6 +5,7 @@ from sklearn.decomposition import PCA
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import math
 
 groups = ['External', 'Cleaned', 'Doherty', 'Entropy', 'Gates', 'Low', 'Prima', 'Resnik', 'Wean']
 
@@ -62,10 +63,33 @@ print(group_labels.shape)
 kmeans = KMeans(n_clusters=50, init="k-means++", random_state=42, n_init="auto").fit(images)
 targets = kmeans.labels_
 
+# Naive Diversity
 clusters = {idx: set() for idx in range(len(groups))}
 for idx in range(images.shape[0]):
     clusters[group_labels[idx]].add(targets[idx])
 print(list(map(lambda x: len(clusters[x]), clusters.keys())))
+
+# Shannon/Simpson Diversity
+shannon_diversity = []
+simpson_diversity = []
+for idx in range(len(groups)):
+    group_count = 0
+    count_clusters = {i: 0 for i in range(50)}
+    for group_label_idx in range(len(group_labels)):
+        if (group_labels[group_label_idx] == idx): 
+            group_count += 1
+            count_clusters[targets[group_label_idx]] += 1
+    
+    shannon_diversity_index = 0
+    simpson_index = 0
+    for key in count_clusters.keys():
+        value = count_clusters[key]
+        p_i = value/group_count
+        if (p_i > 0):
+            shannon_diversity_index -= (p_i) * math.log(p_i)
+            simpson_index += p_i**2
+    shannon_diversity.append(shannon_diversity_index)
+    simpson_diversity.append(simpson_index)
 
 kmeans_plot = KMeans(n_clusters=10, init="k-means++", random_state=42, n_init="auto").fit(images)
 targets_plot = kmeans_plot.labels_
@@ -78,4 +102,15 @@ plt.xlabel('PCA Dim 1')
 plt.ylabel('PCA Dim 2')
 plt.title('PCA Plot of Clusters (k = 10)')
 plt.savefig("kmeans_plot.jpg")
+plt.clf()
+
+for i in u_labels:
+    plt.scatter(reduced_images[targets_plot == i, 0], reduced_images[targets_plot == i, 1], label = i)
+plt.legend()
+plt.xlabel('PCA Dim 1')
+plt.ylabel('PCA Dim 2')
+plt.title('PCA Plot of Clusters Closeup (k = 10)')
+plt.ylim(top=4000)
+plt.xlim(right=25000)
+plt.savefig("kmeans_plot_closeup.jpg")
 plt.clf()
